@@ -1,0 +1,16 @@
+{
+  "name": "chord-chart-practice",
+  "version": "1.0.0",
+  "description": "A little tool that prints out random chords at a given tempo, which I've been using to practice jazz chords/keeping up with a chord chart",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^17.0.8"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"no tests\""
+  },
+  "author": "Jacob Bloom",
+  "license": "MIT"
+}
