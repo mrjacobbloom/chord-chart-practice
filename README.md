@@ -6,9 +6,6 @@ A little tool that prints out random chords at a given tempo, which I've been us
 The set of possible chord qualities/aliases for those chord qualities is definitely not exhaustive. If there's one you'd like me to add, open an issue (or a PR)
 
 ```bash
-# to install:
-npm install
-
 # to run:
 npm start
 ```
