@@ -149,6 +149,7 @@ process.stdin.on('data', function(key){
   mainLoop();
 });
 
+console.clear();
 console.log(`[UP and DOWN] to control tempo.
 [1-9] to control measure length.
 [e] to simplify enharmonics (Fb, B#, etc.)
