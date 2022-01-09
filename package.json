@@ -11,6 +11,7 @@
     "start": "node index.js",
     "test": "echo \"no tests\""
   },
+  "type": "module",
   "author": "Jacob Bloom",
   "license": "MIT"
 }
