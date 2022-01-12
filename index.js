@@ -1,3 +1,3 @@
-import { CLI } from './src/cli.js';
+import { ChordChartPracticeApp } from './src/app.js';
 
-new CLI();
+new ChordChartPracticeApp();

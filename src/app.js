@@ -5,7 +5,7 @@ import { Player } from './player.js';
 /**
  * The core of the app. Draws the interface, handles scheduling future beats, plays the metronome sound. Is there anything it can't do?
  */
-export class CLI {
+export class ChordChartPracticeApp {
   /**
    * State for the app.
    * @private
