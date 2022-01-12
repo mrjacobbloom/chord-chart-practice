@@ -19,7 +19,7 @@ export class CLI {
     simplifyEnharmonics: false,
   
     // Other state
-    beat: -2, // Incremented at the start of the main loop, but also.... you know what, just don't worry about it ok
+    beat: 0,
     chord: '',
     nextChord: '',
   }
@@ -41,7 +41,7 @@ export class CLI {
    */
   mainLoop() {
     this.state.beat += 1;
-    if (this.state.beat === -1 || this.getProgress() > 1) this.nextPhrase();
+    if (this.state.beat === 1 || this.getProgress() > 1) this.nextPhrase();
 
     this.doMetronome();
     this.drawInterface();
@@ -131,7 +131,7 @@ export class CLI {
    * Get the progress in the phrase, as a number 0-1.
    * @private
    */
-  getProgress() { return (this.state.beat + 1) / (this.state.timeSignature * this.state.barsPerPhrase); }
+  getProgress() { return this.state.beat / (this.state.timeSignature * this.state.barsPerPhrase); }
 
   /**
    * Use ANSI color codes to highlight the given string into a progress bar!
@@ -160,7 +160,7 @@ export class CLI {
    * @private
    */
   nextPhrase() {
-    this.state.beat = 0;
+    this.state.beat = 1;
     this.state.chord = this.state.nextChord || getRandomChord(this.state.simplifyEnharmonics);
     this.state.nextChord = getRandomChord(this.state.simplifyEnharmonics);
   }
@@ -171,7 +171,7 @@ export class CLI {
    */
   doMetronome() {
     if (this.state.metronome) {
-      if (this.state.beat % this.state.timeSignature === 0) {
+      if (this.state.beat % this.state.timeSignature === 1) {
         this.player.play('resources/high.mp3');
       } else {
         this.player.play('resources/low.mp3');
