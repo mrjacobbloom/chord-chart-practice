@@ -9,3 +9,7 @@ The set of possible chord qualities/aliases for those chord qualities is definit
 # to run:
 npm start
 ```
+
+## Credits
+
+Click sound effect is adapted from this Metronome sound effect by Mike Koenig, which is under an Attribution 3.0 license: https://soundbible.com/914-Metronome.html

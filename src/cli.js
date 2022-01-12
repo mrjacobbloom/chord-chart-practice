@@ -1,71 +1,110 @@
+import { COLORS } from './colors.js';
 import { getRandomChord } from './getRandomChord.js';
-
-const preamble = `[UP and DOWN] to control tempo.
-[1-9] to control measure length.
-[e] to simplify enharmonics (Fb, B#, etc.)
-Press any other key to exit.\n\n`;
+import { Player } from './player.js';
 
 const state = {
   // The user-configurable options
-  tempo: 60,
+  tempo: 120,
   timeSignature: 4,
+  barsPerPhrase: 2,
+  metronome: true,
   simplifyEnharmonics: false,
 
   // Other state
-  beat: -1,
+  beat: -2, // Incremented at the start of the main loop, but also.... you know what, just don't worry about it ok
   chord: '',
   nextChord: '',
 };
 
 /**
- * Dim some text in the terminal.
- * 
- * @type {(str: any) => string}
+ * Format the given string as a measure (prepend a pipe and center in 8 spaces)
+ * @param {string} str 
  */
-const dimText = (str) => `\u001B[2m${str}\u001B[22m`;
+const formatMeasure = (str) => {
+  const length = 8 - str.length;
+  return `|${' '.repeat(Math.floor(length/2))}${str}${' '.repeat(Math.ceil(length/2))}`;
+}
 
 /**
  * Get the number of milliseconds in a beat.
  * `setTimeout` isn't actually that precise, but that's okay since we're only ever scheduling 1 event into the future.
  */
 const getMSPerBeat = () => 60 * 1000 / state.tempo;
+
+/**
+ * Get the progress in the phrase, as a number 0-1.
+ */
+const getProgress = () => (state.beat + 1) / (state.timeSignature * state.barsPerPhrase);
+
+/**
+ * Use ANSI color codes to highlight the given string into a progress bar!
+ * @param {string} string 
+ */
+const progressBarIfyString = (string, progress) => {
+  const progressLength = Math.round(progress * string.length);
+  const progressPart = string.substring(0, progressLength);
+  const remainderPart = string.substring(progressLength);
+  return `${COLORS.gray(progressPart)}${remainderPart}`;
+};
  
 /**
- * Generate the "chord line" of the CLI: progress bar, chord name, and next chord.
+ * Generate the "chord line" of the CLI: chord-measures progress bar and next chord.
  */
 const genChordLine = () => {
-  const progressBar = '▓'.repeat(state.beat + 1) + '░'.repeat(Math.max(state.timeSignature - state.beat - 1, 0));
-  const nextChordPart = dimText(`(next: ${state.nextChord})`);
-  return `${progressBar} ${state.chord} ${nextChordPart}`;
+  const thisPhraseRaw = `${formatMeasure(state.chord)}${formatMeasure('%').repeat(state.barsPerPhrase - 1)}`;
+  const thisPhraseProgressBar = progressBarIfyString(thisPhraseRaw, getProgress());
+  return `${thisPhraseProgressBar}| ${COLORS.dim(state.nextChord)} `; // Space on the end because cursor is ugly
 };
-
-/** @type {NodeJS.Timeout} */ let timeout;
  
 /**
  * Stuff that happens at the beginning of each measure (choosing the next chord and setting beat to 0)
  */
-const nextMeasure = () => {
+const nextPhrase = () => {
   state.beat = 0;
   state.chord = state.nextChord || getRandomChord(state.simplifyEnharmonics);
   state.nextChord = getRandomChord(state.simplifyEnharmonics);
 };
 
+const player = new Player();
 /**
- * The main loop. Runs on each "beat" to redraw the interface.
+ * Plays the metronome sound. Runs in the "main loop" on each beat.
  */
-const mainLoop = () => {
-  if (state.beat === -1 || state.beat >= state.timeSignature) nextMeasure();
+const doMetronome = () => {
+  if (state.metronome) {
+    if (state.beat % state.timeSignature === 0) {
+      player.play('resources/high.mp3');
+    } else {
+      player.play('resources/low.mp3');
+    }
+  }
+}
 
+/**
+ * Draw the interface. Runs in the "main loop" on each beat, or when a setting changes.
+ */
+const drawInterface = () => {
   console.clear();
-  console.log(`Tempo: ${state.tempo} ${dimText('-- change: [↑] & [↓]')}`);
-  console.log(`Time Signature: ${state.timeSignature} ${dimText('-- change: [1-9]')}`);
-  console.log(`Simplify (Cb→B, etc): ${state.simplifyEnharmonics ? 'ON' : 'OFF'} ${dimText('-- toggle: [e]')}`);
+  console.log(`Tempo: ${state.tempo} ${COLORS.dim('-- change: [↑] & [↓]')}`);
+  console.log(`Time Signature: ${state.timeSignature}/4 ${COLORS.dim('-- change: [1-9]')}`);
+  console.log(`Bars per Phrase: ${state.barsPerPhrase} ${COLORS.dim('-- change: [←] & [→]')}`);
+  console.log(`Metronome: ${state.metronome ? 'ON' : 'OFF'} ${COLORS.dim('-- toggle: [m]')}`);
+  console.log(`Simplify (Cb→B, etc): ${state.simplifyEnharmonics ? 'ON' : 'OFF'} ${COLORS.dim('-- toggle: [e]')}`);
   console.log('Press any other key to exit.');
   console.log('');
   process.stdout.write(genChordLine()); // use stdout.write just to keep cursor on this line.
+}
 
+/**
+ * The main loop. Runs on each "beat" to redraw the interface and play the metronome sound.
+ */
+const mainLoop = () => {
   state.beat += 1;
-  timeout = setTimeout(mainLoop, getMSPerBeat());
+  if (state.beat === -1 || getProgress() > 1) nextPhrase();
+
+  doMetronome();
+  drawInterface();
+
+  setTimeout(mainLoop, getMSPerBeat());
 };
 
 // Setup keyboard input
@@ -84,6 +123,18 @@ process.stdin.on('data', function(key){
       state.tempo = Math.max(state.tempo - 5, 20);
       break;
     }
+    case '\u001B\u005B\u0043': { // right
+      state.barsPerPhrase += 1;
+      break;
+    }
+    case '\u001B\u005B\u0044': { // left
+      state.barsPerPhrase = Math.max(state.barsPerPhrase - 1, 1);
+      break;
+    }
+    case 'm': {
+      state.metronome = !state.metronome;
+      break;
+    }
     case 'e': {
       state.simplifyEnharmonics = !state.simplifyEnharmonics;
       break;
@@ -99,9 +150,8 @@ process.stdin.on('data', function(key){
     }
   }
 
-  // Restart the main loop so the effect happens immediately (instead of on the next beat)
-  clearTimeout(timeout);
-  mainLoop();
+  // Redraw the interface immediately so the user believes the feedback is real
+  drawInterface();
 });
 
 export const start = mainLoop;
