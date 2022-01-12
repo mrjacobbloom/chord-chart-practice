@@ -52,10 +52,10 @@ export class CLI {
 
   /**
    * Setup keyboard input.
+   * Adapted from https://stackoverflow.com/a/30687420
    * @private
    */
   setupKeyboardInput() {
-    // Adapted from https://stackoverflow.com/a/30687420
     process.stdin.setRawMode(true);
     process.stdin.resume();
     process.stdin.setEncoding('utf8');
@@ -64,7 +64,9 @@ export class CLI {
 
   /**
    * Handle key presses and stuff.
-   * @param {Buffer} key 
+   * Adapted from https://stackoverflow.com/a/30687420
+   * @param {Buffer} key
+   * @private
    */
   handleKeyboardInput(key){
     const keyString = key.toString();
