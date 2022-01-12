@@ -15,10 +15,14 @@ const PLAYERS = [
   'powershell'
 ];
 
+/**
+ * Plays a given sound using whatever player is available on the user's system.
+ */
 export class Player {
   player = '';
 
   constructor() {
+    // Cycle through known players until we find one that exists on the user's system.
     for (const possiblePlayer of PLAYERS) {
       if (this.commandExists(possiblePlayer)) {
         this.player = possiblePlayer;
@@ -30,7 +34,7 @@ export class Player {
 
   /**
    * Test whether a shell command exists on this system.
-   * @param {string} command 
+   * @param {string} command
    * @returns {boolean}
    * @private
    */
@@ -45,7 +49,8 @@ export class Player {
 
   /**
    * Play the file with the given name.
-   * @param {string} filename 
+   * @param {string} filename
+   * @public
    */
   play(filename) {
     exec(`${this.player} ${filename}`);

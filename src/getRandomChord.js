@@ -8,10 +8,10 @@ import { KEYS, ACCIDENTALS, ENHARMONIC, QUALITIES } from './theoryConstants.js';
 const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 /**
-* Generate a random chord string.
-* 
-* @type {(simplifyEnharmonics: boolean) => string}
-*/
+ * Generate a random chord string.
+ * @param {boolean} simplifyEnharmonics If true, don't generate tonics like "Fb" that have a simpler enharmonic equivalent.
+ * @returns {string} A random chord as a string.
+ */
 export const getRandomChord = (simplifyEnharmonics) => {
   /** @type {string} */ let tonic;
   do {
