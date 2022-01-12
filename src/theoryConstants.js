@@ -9,8 +9,8 @@ export const QUALITIES = [
   /* Augmented  */ ['aug', '+'],
 
   /********** Suspensions / NCTs **********/
-  /* Major      */ ['sus2', 'sus4', '6'],
-  /* Minor      */ ['-sus4', '-6'],
+  /* Major      */ ['sus2'], ['sus4'], ['6'],
+  /* Minor      */ ['-sus4'], ['-6'],
 
   /********** 7ths **********/
   /* Dominant   */ ['7'],
