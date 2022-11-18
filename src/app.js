@@ -1,5 +1,6 @@
 import { COLORS } from './colors.js';
 import { getRandomChord } from './getRandomChord.js';
+import { SettingsManager } from './settingsManager.js'
 import { Player } from './player.js';
 
 /**
@@ -7,26 +8,28 @@ import { Player } from './player.js';
  */
 export class ChordChartPracticeApp {
   /**
-   * State for the app.
+   * Internal state for the app. User-configurable settings are handled by SettingsManager.
    * @private
    */
   state = {
-    // The user-configurable options
-    tempo: 120,
-    timeSignature: 4,
-    barsPerPhrase: 2,
-    metronome: true,
-    simplifyEnharmonics: false,
-  
-    // Other state
     beat: 0,
     chord: '',
     nextChord: '',
-  }
+
+    settingsOpen: false,
+  };
+
+  /**
+   * Manages the user-configurable settings for the app
+   * @private
+   * @readonly
+   */
+  settings = new SettingsManager();
 
   /**
    * Plays a given sound.
    * @private
+   * @readonly
    */
   player = new Player();
 
@@ -68,42 +71,15 @@ export class ChordChartPracticeApp {
    * @param {Buffer} key
    * @private
    */
-  handleKeyboardInput(key){
+  handleKeyboardInput(key) {
     const keyString = key.toString();
-    switch (keyString) {
-      case '\u001B\u005B\u0041': { // up
-        this.state.tempo += 5;
-        break;
-      }
-      case '\u001B\u005B\u0042': { // down
-        this.state.tempo = Math.max(this.state.tempo - 5, 20);
-        break;
-      }
-      case '\u001B\u005B\u0043': { // right
-        this.state.barsPerPhrase += 1;
-        break;
-      }
-      case '\u001B\u005B\u0044': { // left
-        this.state.barsPerPhrase = Math.max(this.state.barsPerPhrase - 1, 1);
-        break;
-      }
-      case 'm': {
-        this.state.metronome = !this.state.metronome;
-        break;
-      }
-      case 'e': {
-        this.state.simplifyEnharmonics = !this.state.simplifyEnharmonics;
-        break;
-      }
-      default: {
-        const asNumber = Number(keyString);
-        if (asNumber) {
-          this.state.timeSignature = asNumber;
-
-        } else {
-          process.exit();
-        }
-      }
+    if (this.state.settingsOpen && this.settings.handleKeyboardInput(keyString)) {
+      // noop, input was handled by settingsManager
+    } else if (keyString === 's') {
+      this.state.settingsOpen = !this.state.settingsOpen;
+      this.settings.selectedRow = 0;
+    } else {
+      process.exit();
     }
 
     // Redraw the interface immediately so the user believes the feedback is real
@@ -116,6 +92,7 @@ export class ChordChartPracticeApp {
    * @private
    */
   formatMeasure(str) {
+    if (str.length > 7) return `| ${str} `;
     const length = 8 - str.length;
     return `|${' '.repeat(Math.floor(length/2))}${str}${' '.repeat(Math.ceil(length/2))}`;
   }
@@ -125,13 +102,13 @@ export class ChordChartPracticeApp {
    * `setTimeout` isn't actually that precise, but that's okay since we're only ever scheduling 1 event into the future.
    * @private
    */
-  getMSPerBeat() { return 60 * 1000 / this.state.tempo; }
+  getMSPerBeat() { return 60 * 1000 / this.settings.get('tempo'); }
 
   /**
    * Get the progress in the phrase, as a number 0-1.
    * @private
    */
-  getProgress() { return this.state.beat / (this.state.timeSignature * this.state.barsPerPhrase); }
+  getProgress() { return this.state.beat / (this.settings.get('timeSignature') * this.settings.get('barsPerPhrase')); }
 
   /**
    * Use ANSI color codes to highlight the given string into a progress bar!
@@ -150,7 +127,7 @@ export class ChordChartPracticeApp {
    * @private
    */
   genChordLine() {
-    const thisPhraseRaw = `${this.formatMeasure(this.state.chord)}${this.formatMeasure('%').repeat(this.state.barsPerPhrase - 1)}`;
+    const thisPhraseRaw = `${this.formatMeasure(this.state.chord)}${this.formatMeasure('%').repeat(this.settings.get('barsPerPhrase') - 1)}`;
     const thisPhraseProgressBar = this.progressBarIfyString(thisPhraseRaw, this.getProgress());
     return `${thisPhraseProgressBar}| ${COLORS.dim(this.state.nextChord)} `; // Space on the end because cursor is ugly
   }
@@ -161,8 +138,8 @@ export class ChordChartPracticeApp {
    */
   nextPhrase() {
     this.state.beat = 1;
-    this.state.chord = this.state.nextChord || getRandomChord(this.state.simplifyEnharmonics);
-    this.state.nextChord = getRandomChord(this.state.simplifyEnharmonics);
+    this.state.chord = this.state.nextChord || getRandomChord(this.settings.get('simplifyEnharmonics'), this.settings.get('complexity'));
+    this.state.nextChord = getRandomChord(this.settings.get('simplifyEnharmonics'), this.settings.get('complexity'));
   }
 
   /**
@@ -170,8 +147,8 @@ export class ChordChartPracticeApp {
    * @private
    */
   doMetronome() {
-    if (this.state.metronome) {
-      if (this.state.beat % this.state.timeSignature === 1) {
+    if (this.settings.get('metronome')) {
+      if (this.state.beat % this.settings.get('timeSignature') === 1) {
         this.player.play('resources/high.mp3');
       } else {
         this.player.play('resources/low.mp3');
@@ -180,18 +157,18 @@ export class ChordChartPracticeApp {
   }
 
   /**
-   * Draw the interface. Runs in the "main loop" on each beat, or when a setting changes.
+   * Draw the interface. Runs in the "main loop" on each beat, or on keyboard input
    * @private
    */
   drawInterface() {
     console.clear();
-    console.log(`Tempo: ${this.state.tempo} ${COLORS.dim('-- change: [↑] & [↓]')}`);
-    console.log(`Time Signature: ${this.state.timeSignature}/4 ${COLORS.dim('-- change: [1-9]')}`);
-    console.log(`Bars per Phrase: ${this.state.barsPerPhrase} ${COLORS.dim('-- change: [←] & [→]')}`);
-    console.log(`Metronome: ${this.state.metronome ? 'ON' : 'OFF'} ${COLORS.dim('-- toggle: [m]')}`);
-    console.log(`Simplify (Cb→B, etc): ${this.state.simplifyEnharmonics ? 'ON' : 'OFF'} ${COLORS.dim('-- toggle: [e]')}`);
-    console.log('Press any other key to exit.');
-    console.log('');
+    if (this.state.settingsOpen) {
+      this.settings.drawInterface();
+    } else {
+      console.log(COLORS.dim('Open Settings: [s]'));
+      console.log(COLORS.dim('Press any other key to exit.'));
+      console.log('');
+    }
     process.stdout.write(this.genChordLine()); // use stdout.write just to keep cursor on this line.
   }
 }
