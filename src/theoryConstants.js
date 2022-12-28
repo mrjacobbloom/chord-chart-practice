@@ -30,7 +30,7 @@ export const QUALITIES = [
 
     /********** Suspensions / NCTs **********/
     /* Major        */ ['sus2'], ['sus4'], ['6'],
-    /* Minor        */ ['-sus4'], ['-6'],
+    /* Minor        */ ['-sus2'], ['-sus4'], ['-6', 'm6', 'min6'],
   ],
 
   /* ########## COMPLEXITY 2: 7THS ########## */ [
@@ -38,7 +38,7 @@ export const QUALITIES = [
     /* Major        */ ['M7', 'Δ7', 'Maj7'],
     /* Minor        */ ['-7', 'm7', 'min7'],
     /* Fully-Diminished */ ['dim7', '°7'],
-    /* Half-Diminished  */ ['ø7', 'm7b5'],
+    /* Half-Diminished  */ ['ø7', 'm7b5', '-7 (b5)', 'm7 (b5)', 'min7 (b5)'],
   ],
 
   /* ########## COMPLEXITY 3: CHORD EXTENSIONS ########## */ [
@@ -72,7 +72,7 @@ export const QUALITIES = [
     /* Minor #11    */ ['-7 (#11)', 'm7 (#11)', 'min7 (#11)'],
 
     /********** 13ths **********/
-    /* Dominant b13 */ ['7 (b13)'],
+    /* Dominant b13 */ ['7b13', '7 (b13)'],
     /* Major b13    */ ['M7 (b13)', 'Δ7 (b13)', 'Maj7 (b13)'],
     /* Minor b13    */ ['-7 (b13)', 'm7 (b13)', 'min7 (b13)'],
   ],
