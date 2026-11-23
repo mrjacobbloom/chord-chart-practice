@@ -4,8 +4,9 @@ namespace Setting {
     timeSignature: 'number';
     chordDuration: 'enum';
     lookahead: 'number';
-    complexity: 'enum';
-    metronome: 'boolean';
+    // complexity: 'enum';
+    metronome: 'enum';
+    metronomeDelay: 'number';
     accidentals: 'enum';
   };
 
@@ -44,3 +45,32 @@ namespace Setting {
 }
 
 type Setting<N extends Setting.Name> = Setting.Setting<SettingsToTypesMap<N>>;
+
+namespace Cadence {
+  type Chord = {
+    quality: string;
+    family: string;
+    symbol: string;
+    bassInterval?: Cadence.Interval;
+  };
+
+  type Interval = { name: string; semitones: number; };
+
+  type Cadence = {
+    /**
+     * Number of times this cadence occurred in the iReal data
+     */
+    frequency: number;
+  
+    chord1: Cadence.Chord;
+    interval1: Cadence.Interval;
+    chord2: Cadence.Chord;
+    interval2: Cadence.Interval;
+    chord3: Cadence.Chord;
+  };
+}
+
+/**
+ * Represents the motion and qualities of any 3 neighboring chords in the iReal 1300
+ */
+type Cadence = Cadence.Cadence;

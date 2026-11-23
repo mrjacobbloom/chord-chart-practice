@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "A little tool that prints out random chords at a given tempo, which I've been using to practice jazz chords/keeping up with a chord chart",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "tonal": "^6.9.0"
+  },
   "devDependencies": {
-    "@types/node": "^17.0.8"
+    "@types/node": "^17.0.8",
+    "ireal-parse": "github:ItsGiusto/ireal-parse"
   },
   "scripts": {
     "start": "node index.js",

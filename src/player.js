@@ -1,4 +1,4 @@
-import { execSync, exec } from 'child_process';
+import { execSync, spawn } from 'child_process';
 
 // Shamelessly stolen from https://github.com/shime/play-sound/blob/master/index.js
 // Here's hoping they all work with 1 file argument ^.^'
@@ -53,6 +53,14 @@ export class Player {
    * @public
    */
   play(filename) {
-    exec(`${this.player} ${filename}`);
+    const child = spawn(this.player, [filename], {
+      stdio: 'ignore',
+      windowsHide: true
+    });
+
+    child.once('error', error => {
+      console.error(`Unable to play ${filename}:`, error.message);
+      process.exit(1)
+    });
   }
 }

@@ -13,12 +13,13 @@ export class SettingsManager {
    * @private
    */
    settings = [
-    { name: 'tempo', displayName: 'Tempo', type: 'number', value: 120, min: 20, increment: 5 },
+    { name: 'tempo', displayName: 'Tempo', type: 'number', value: 100, min: 20, increment: 5 },
     { name: 'timeSignature', displayName: 'Time Signature', type: 'number', value: 4, min: 1, max: 12, valueSuffix: '/4' },
     { name: 'chordDuration', displayName: 'Chord Duration', type: 'enum', value: 2, enum: ['1 Beat', '2 Beats', '1 Measure', '2 Measures'] },
-    { name: 'lookahead', displayName: 'Phrase Look-ahead', type: 'number', value: 2, min: 1 },
-    { name: 'complexity', displayName: 'Complexity', type: 'enum', value: 3, enum: ['Triads & Suspensions', '7ths', 'Chord Extensions', 'Altered Chords'] },
-    { name: 'metronome', displayName: 'Metronome', type: 'boolean', value: false },
+    { name: 'lookahead', displayName: 'Phrase Look-ahead', type: 'number', value: 2, min: 0 },
+    // { name: 'complexity', displayName: 'Complexity', type: 'enum', value: 3, enum: ['Triads & Suspensions', '7ths', 'Chord Extensions', 'Altered Chords'] },
+    { name: 'metronome', displayName: 'Metronome', type: 'enum', value: 0, enum: ['OFF', 'Downbeat', 'Even Beats', 'Every Beat'] },
+    { name: 'metronomeDelay', displayName: 'Metronome Delay', type: 'number', value: -10, min: -300, max: 100, increment: 5, valueSuffix: 'ms' },
     { name: 'accidentals', displayName: 'Accidentals', type: 'enum', value: 2, enum: ['None', 'Avoid Enharmonics (ex. no Cb)', 'Single-Accidentals', 'Double-Accidentals'] }
   ];
 

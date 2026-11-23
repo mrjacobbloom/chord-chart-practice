@@ -1,5 +1,5 @@
 import { COLORS } from './colors.js';
-import { getRandomChord } from './getRandomChord.js';
+import { predictNextChord } from './getRandomChord.js';
 import { SettingsManager } from './settingsManager.js'
 import { Player } from './player.js';
 
@@ -14,13 +14,21 @@ export class ChordChartPracticeApp {
    * @private
    */
   state = {
+    /**
+     * How many beats we are into the PHRASE, which is defined as 1 or more measures
+     */
     beat: 0,
 
     /**
-     * Array of measures, and each measure is an array of chord strings
-     * @type {string[][]}
+     * current and upcoming chord strings
+     * @type {string[]}
      * */
-    measures: [],
+    chords: ['CMaj7'],
+
+    /**
+     * Last 2 chords used
+     */
+    history: ['D-7', 'G7'],
 
     settingsOpen: false,
   };
@@ -50,12 +58,13 @@ export class ChordChartPracticeApp {
    */
   mainLoop() {
     this.state.beat += 1;
-    if (this.state.beat === 1 || this.getProgress() > 1) this.nextPhrase();
+    if (this.state.beat === 1 || this.getPhraseProgress() > 1) this.nextPhrase();
 
-    this.doMetronome();
     this.drawInterface();
 
     // use setTimeout over setInterval so changing the tempo "just works"
+    const nextBeat = this.state.beat + 1; // freeze the beat to sidestep timing issues
+    setTimeout(() => this.doMetronome(nextBeat), this.getMSPerBeat() + this.settings.get('metronomeDelay'))
     setTimeout(this.mainLoop.bind(this), this.getMSPerBeat());
   }
 
@@ -93,14 +102,14 @@ export class ChordChartPracticeApp {
   }
 
   /**
-   * Format the given measure (chords array) as a string (prepend a pipe and center in 8 spaces)
+   * Pad the given measure (chords array) as a string (centered in 10 spaces)
    * @param {string[]} measure
    * @private
    */
-  formatMeasure(measure) {
+  padMeasure(measure) {
     const chordsStr = measure.join(' ');
     const length = Math.max(1, MEASURE_CHAR_LENGTH - chordsStr.length - 1)
-    return `| ${chordsStr}${' '.repeat(length)}`;
+    return ` ${chordsStr}${' '.repeat(length)}`;
   }
 
   /**
@@ -114,7 +123,16 @@ export class ChordChartPracticeApp {
    * Get the progress in the measure, as a number 0-1.
    * @private
    */
-  getProgress() { return this.state.beat / this.settings.get('timeSignature'); }
+  getMeasureProgress() {
+    const p = (this.state.beat % this.settings.get('timeSignature')) / this.settings.get('timeSignature');
+    return p === 0 ? 1 : p;
+  }
+
+  /**
+   * Get the progress in the phrase (1 or more measures), as a number 0-1.
+   * @private
+   */
+  getPhraseProgress() { return this.state.beat / (this.settings.get('timeSignature') * this.getMeasuresPerPhrase()); }
 
   /**
    * Use ANSI color codes to highlight the given string into a progress bar!
@@ -134,51 +152,95 @@ export class ChordChartPracticeApp {
    * @private
    */
   genChordLine() {
-    const [currentMeasure, ...futureMeasures] = this.state.measures;
-    const currentMeasureProgressBar = this.progressBarIfyString(this.formatMeasure(currentMeasure), this.getProgress());
-    const futureMeasuresRendered = futureMeasures.map(m => this.formatMeasure(m)).join('').substring(1); // cut off first measure's leading pipe
-    return `${currentMeasureProgressBar}|${COLORS.dim(futureMeasuresRendered)} `; // Space on the end because cursor is ugly
+    const measures = this.getMeasures();
+    if (this.state.beat > this.settings.get('timeSignature')) measures.splice(0, 1);
+    const [currentMeasure, ...futureMeasures] = measures;
+    const currentMeasureProgressBar = this.progressBarIfyString(this.padMeasure(currentMeasure), this.getMeasureProgress());
+    const futureMeasuresRendered = futureMeasures.map(m => this.padMeasure(m)).join('|');
+    return `|${currentMeasureProgressBar}|${COLORS.dim(futureMeasuresRendered)} `; // Space on the end because cursor is ugly
+  }
+
+  /**
+   * Get the number of chords per measure
+   * @private
+   * @returns {number}
+   */
+  getChordsPerMeasure() {
+    if (this.settings.get('chordDuration') === 0) { // 1 beat
+      return this.settings.get('timeSignature');
+    } else if (this.settings.get('chordDuration') === 1) { // 2 beats
+      return Math.floor(this.settings.get('timeSignature') / 2)
+    } else if (this.settings.get('chordDuration') === 2) { // 1 measure
+      return 1;
+    } else { // 2 measures
+      return 0.5;
+    }
+  }
+
+  getMeasuresPerPhrase() {
+    return this.settings.get('chordDuration') === 3 ? 2 : 1;
+  }
+
+  getChordsPerPhrase() {
+    return this.getChordsPerMeasure() * this.getMeasuresPerPhrase();
+  }
+
+  /**
+   * Divide state.chords into measure arrays, where each one is an array of one or more chord strings (can be `%` for "repeat the last chord")
+   * @private
+   */
+  getMeasures() {
+    /** @type {string[][]} */ const measures = [];
+
+    const chordsPerMeasure = this.getChordsPerMeasure();
+    /** @type {string[]} */ let measure = [];
+    for (const chord of this.state.chords) {
+      measure.push(chord);
+      if (measure.length >= chordsPerMeasure) {
+        measures.push(measure);
+        measure = [];
+      }
+
+      if (chordsPerMeasure < 1) {
+        for(let i = chordsPerMeasure; i < 1; i += chordsPerMeasure) {
+          measures.push(['%']);
+        }
+      }
+    }
+    return measures;
   }
   
   /**
-   * Stuff that happens at the beginning of each measure (choosing the next chord and setting beat to 0)
+   * Stuff that happens at the beginning of each phrase (choosing the next chords and setting beat to 0)
    * @private
    */
   nextPhrase() {
     this.state.beat = 1;
-    this.state.measures.splice(0, 1); // pop-front the previous measure
-    while(this.state.measures.length < this.settings.get('lookahead') + 1) {
-      if (this.settings.get('chordDuration') === 0) { // 1 beat
-        const measure = [];
-        for (let i = 0; i < this.settings.get('timeSignature'); i++) {
-          measure.push(getRandomChord(this.settings.get('complexity'), this.settings.get('accidentals')));
-        }
-        this.state.measures.push(measure)
-      } else if (this.settings.get('chordDuration') === 1) { // 2 beats
-        const measure = [];
-        for (let i = 0; i < this.settings.get('timeSignature'); i += 2) {
-          measure.push(getRandomChord(this.settings.get('complexity'), this.settings.get('accidentals')));
-        }
-        this.state.measures.push(measure)
-      } else if (this.settings.get('chordDuration') === 2) { // 1 measure
-        this.state.measures.push([getRandomChord(this.settings.get('complexity'), this.settings.get('accidentals'))]);
-      } else if (this.settings.get('chordDuration') === 3) { // 2 measures
-        this.state.measures.push([getRandomChord(this.settings.get('complexity'), this.settings.get('accidentals'))]);
-        this.state.measures.push(['%']);
-      }
+    this.state.history = [this.state.history[1], this.state.chords[0]];
+    this.state.chords.splice(0, 1); // pop-front the previous chord
+    let prev2 = [...this.state.history, ...this.state.chords].slice(-2);
+    while(this.state.chords.length < this.getChordsPerPhrase() * (this.settings.get('lookahead') + 1)) {
+      // @todo: re-implement complexity
+      const nextChord = predictNextChord(prev2[0], prev2[1], 3 /* this.settings.get('complexity') */, this.settings.get('accidentals'));
+      this.state.chords.push(nextChord);
+      prev2 = [prev2[1], nextChord];
     }
   }
 
   /**
-   * Plays the metronome sound. Runs in the "main loop" on each beat.
+   * Plays the metronome sound. Called from the "main loop" on each beat.
+   * @param {number} beat
    * @private
    */
-  doMetronome() {
-    if (this.settings.get('metronome')) {
-      if (this.state.beat % this.settings.get('timeSignature') === 1) {
-        this.player.play('resources/high.mp3');
-      } else {
-        this.player.play('resources/low.mp3');
+  doMetronome(beat) {
+    beat = beat % this.settings.get('timeSignature');
+    if (this.settings.get('metronome') !== 0) {
+      if (beat === 1) {
+        this.player.play('resources/high2.mp3');
+      } else if (this.settings.get('metronome') === 2 && beat % 2 === 1) {
+        this.player.play('resources/low2.mp3');
+      } else if (this.settings.get('metronome') === 3) {
+        this.player.play('resources/low2.mp3');
       }
     }
   }
