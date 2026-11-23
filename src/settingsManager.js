@@ -15,10 +15,11 @@ export class SettingsManager {
    settings = [
     { name: 'tempo', displayName: 'Tempo', type: 'number', value: 120, min: 20, increment: 5 },
     { name: 'timeSignature', displayName: 'Time Signature', type: 'number', value: 4, min: 1, max: 12, valueSuffix: '/4' },
-    { name: 'barsPerPhrase', displayName: 'Bars per Phrase', type: 'number', value: 2, min: 1 },
+    { name: 'chordDuration', displayName: 'Chord Duration', type: 'enum', value: 2, enum: ['1 Beat', '2 Beats', '1 Measure', '2 Measures'] },
+    { name: 'lookahead', displayName: 'Phrase Look-ahead', type: 'number', value: 2, min: 1 },
     { name: 'complexity', displayName: 'Complexity', type: 'enum', value: 3, enum: ['Triads & Suspensions', '7ths', 'Chord Extensions', 'Altered Chords'] },
-    { name: 'metronome', displayName: 'Metronome', type: 'boolean', value: true },
-    { name: 'simplifyEnharmonics', displayName: 'Simplify Enharmonics (Cb→B, etc)', type: 'boolean', value: false },
+    { name: 'metronome', displayName: 'Metronome', type: 'boolean', value: false },
+    { name: 'accidentals', displayName: 'Accidentals', type: 'enum', value: 2, enum: ['None', 'Avoid Enharmonics (ex. no Cb)', 'Single-Accidentals', 'Double-Accidentals'] }
   ];
 
   selectedRow = 0;
@@ -95,7 +96,7 @@ export class SettingsManager {
       const setting = this.settings[i];
       let prettyValue = String(setting.value);
       if (setting.type === 'boolean') prettyValue = setting.value ? 'ON' : 'OFF';
-      if (setting.type === 'enum') prettyValue = `${setting.value} (${setting.enum[/** @type {any} */ (setting.value)]})`;
+      if (setting.type === 'enum') prettyValue = setting.enum[/** @type {any} */ (setting.value)];
       if (setting.valueSuffix) prettyValue += setting.valueSuffix;
       const line = `${setting.displayName}: ${prettyValue}`;
       console.log(i === this.selectedRow ? COLORS.gray(line) : line)

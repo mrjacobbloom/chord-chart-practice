@@ -7,6 +7,7 @@ export const KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
  * Possible accidentals. Combined with KEYS, it can be used to create any note! Any note at all!
  */
 export const ACCIDENTALS = ['', 'b', '#'];
+export const ACCIDENTALS_WITH_DOUBLES = [...ACCIDENTALS, 'bb', '##', 'x']
 
 /**
  * The notes that have a simpler enharmonic notation. When "Simplify Enharmonics" is ON, these notes won't be used to generate chords.
@@ -45,7 +46,7 @@ export const QUALITIES = [
     /* Major        */ alias('Maj7'),
     /* Minor        */ alias('min7'),
     /* Fully-Diminished */ ['dim7', '°7'],
-    /* Half-Diminished  */ ['ø7', 'm7b5', ...alias('min7 (b5)')],
+    /* Half-Diminished  */ ['ø7', 'm7b5', ...alias('min7(b5)')],
   ],
 
   /* ########## COMPLEXITY 3: CHORD EXTENSIONS ########## */ [
@@ -67,20 +68,20 @@ export const QUALITIES = [
 
   /* ########## COMPLEXITY 4: ALTERED CHORDS ########## */ [ // Talk about a combinatoral explosion
     /********** 9ths **********/
-    /* Dominant b9  */ ['7 (b9)'],
-    /* Dominant #9  */ ['7 (#9)'],
-    /* Major b9     */ alias('Maj7 (b9)'),
-    /* Major #9     */ alias('Maj7 (#9)'),
-    /* Minor b9     */ alias('min7 (b9)'),
+    /* Dominant b9  */ ['7(b9)'],
+    /* Dominant #9  */ ['7(#9)'],
+    /* Major b9     */ alias('Maj7(b9)'),
+    /* Major #9     */ alias('Maj7(#9)'),
+    /* Minor b9     */ alias('min7(b9)'),
 
     /********** 11ths **********/
-    /* Dominant #11 */ ['7#11', '7 (#11)'],
-    /* Major #11    */ alias('Maj7 (#11)'),
-    /* Minor #11    */ alias('min7 (#11)'),
+    /* Dominant #11 */ ['7#11', '7(#11)'],
+    /* Major #11    */ alias('Maj7(#11)'),
+    /* Minor #11    */ alias('min7(#11)'),
 
     /********** 13ths **********/
-    /* Dominant b13 */ ['7b13', '7 (b13)'],
-    /* Major b13    */ alias('Maj7 (b13)'),
-    /* Minor b13    */ alias('min7 (b13)'),
+    /* Dominant b13 */ ['7b13', '7(b13)'],
+    /* Major b13    */ alias('Maj7(b13)'),
+    /* Minor b13    */ alias('min7(b13)'),
   ],
 ];

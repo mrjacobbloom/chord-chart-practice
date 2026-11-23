@@ -2,16 +2,11 @@ namespace Setting {
   type SettingsToTypesMap = {
     tempo: 'number';
     timeSignature: 'number';
-    barsPerPhrase: 'number';
+    chordDuration: 'enum';
+    lookahead: 'number';
     complexity: 'enum';
     metronome: 'boolean';
-    simplifyEnharmonics: 'boolean';
-  };
-
-  type TypesToValuesMap = {
-    'number': number;
-    'boolean': boolean;
-    'enum': number;
+    accidentals: 'enum';
   };
 
   type Name = keyof SettingsToTypesMap;
@@ -20,16 +15,32 @@ namespace Setting {
 
   type ValueTypeOf<N extends Name> = TypesToValuesMap[TypeOf<N>];
 
-  type Setting<N extends Name> = {
-    name: N;
-    displayName: string;
-    valueSuffix?: SettingsToTypes; // literally just for the `${n}/4`
-    type: TypeOf<N>;
-    value: ValueTypeOf<N>; // default value is just the initial value of value, lol
+  type
 
-    min?: number; max?: number; increment?: number; // number-type only
-    enum?: string[]; // enum-type only
-  };
+  type Setting =
+  | {
+    type: 'boolean';
+    name: string;
+    displayName: string;
+    value: boolean; // default value is just the initial value of value
+  }
+  | {
+    type: 'number';
+    name: string;
+    displayName: string;
+    valueSuffix?: string; // literally just for the `${n}/4`
+    value: number; // default value is just the initial value of value
+    min?: number;
+    max?: number;
+    increment?: number;
+  }
+  | {
+    type: 'enum';
+    name: string;
+    displayName: string;
+    value: number; // default value is just the initial value of value
+    enum: string[];
+  }
 }
 
-type Setting<N extends Setting.Name> = Setting.Setting<N>;
+type Setting<N extends Setting.Name> = Setting.Setting<SettingsToTypesMap<N>>;

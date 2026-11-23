@@ -3,6 +3,8 @@ import { getRandomChord } from './getRandomChord.js';
 import { SettingsManager } from './settingsManager.js'
 import { Player } from './player.js';
 
+const MEASURE_CHAR_LENGTH = 10;
+
 /**
  * The core of the app. Draws the interface, handles scheduling future beats, plays the metronome sound. Is there anything it can't do?
  */
@@ -13,8 +15,12 @@ export class ChordChartPracticeApp {
    */
   state = {
     beat: 0,
-    chord: '',
-    nextChord: '',
+
+    /**
+     * Array of measures, and each measure is an array of chord strings
+     * @type {string[][]}
+     * */
+    measures: [],
 
     settingsOpen: false,
   };
@@ -87,14 +93,14 @@ export class ChordChartPracticeApp {
   }
 
   /**
-   * Format the given string as a measure (prepend a pipe and center in 8 spaces)
-   * @param {string} str
+   * Format the given measure (chords array) as a string (prepend a pipe and center in 8 spaces)
+   * @param {string[]} measure
    * @private
    */
-  formatMeasure(str) {
-    if (str.length > 7) return `| ${str} `;
-    const length = 8 - str.length;
-    return `|${' '.repeat(Math.floor(length/2))}${str}${' '.repeat(Math.ceil(length/2))}`;
+  formatMeasure(measure) {
+    const chordsStr = measure.join(' ');
+    const length = Math.max(1, MEASURE_CHAR_LENGTH - chordsStr.length - 1)
+    return `| ${chordsStr}${' '.repeat(length)}`;
   }
 
   /**
@@ -105,14 +111,15 @@ export class ChordChartPracticeApp {
   getMSPerBeat() { return 60 * 1000 / this.settings.get('tempo'); }
 
   /**
-   * Get the progress in the phrase, as a number 0-1.
+   * Get the progress in the measure, as a number 0-1.
    * @private
    */
-  getProgress() { return this.state.beat / (this.settings.get('timeSignature') * this.settings.get('barsPerPhrase')); }
+  getProgress() { return this.state.beat / this.settings.get('timeSignature'); }
 
   /**
    * Use ANSI color codes to highlight the given string into a progress bar!
-   * @param {string} string 
+   * @param {string} string
+   * @param {number} progress Progress in the measure, as a number 0-1
    * @private
    */
   progressBarIfyString(string, progress) {
@@ -123,13 +130,14 @@ export class ChordChartPracticeApp {
   }
   
   /**
-   * Generate the "chord line" of the CLI: chord-measures progress bar and next chord.
+   * Generate the "chord line" of the CLI
    * @private
    */
   genChordLine() {
-    const thisPhraseRaw = `${this.formatMeasure(this.state.chord)}${this.formatMeasure('%').repeat(this.settings.get('barsPerPhrase') - 1)}`;
-    const thisPhraseProgressBar = this.progressBarIfyString(thisPhraseRaw, this.getProgress());
-    return `${thisPhraseProgressBar}| ${COLORS.dim(this.state.nextChord)} `; // Space on the end because cursor is ugly
+    const [currentMeasure, ...futureMeasures] = this.state.measures;
+    const currentMeasureProgressBar = this.progressBarIfyString(this.formatMeasure(currentMeasure), this.getProgress());
+    const futureMeasuresRendered = futureMeasures.map(m => this.formatMeasure(m)).join('').substring(1); // cut off first measure's leading pipe
+    return `${currentMeasureProgressBar}|${COLORS.dim(futureMeasuresRendered)} `; // Space on the end because cursor is ugly
   }
   
   /**
@@ -138,8 +146,27 @@ export class ChordChartPracticeApp {
    */
   nextPhrase() {
     this.state.beat = 1;
-    this.state.chord = this.state.nextChord || getRandomChord(this.settings.get('simplifyEnharmonics'), this.settings.get('complexity'));
-    this.state.nextChord = getRandomChord(this.settings.get('simplifyEnharmonics'), this.settings.get('complexity'));
+    this.state.measures.splice(0, 1); // pop-front the previous measure
+    while(this.state.measures.length < this.settings.get('lookahead') + 1) {
+      if (this.settings.get('chordDuration') === 0) { // 1 beat
+        const measure = [];
+        for (let i = 0; i < this.settings.get('timeSignature'); i++) {
+          measure.push(getRandomChord(this.settings.get('complexity'), this.settings.get('accidentals')));
+        }
+        this.state.measures.push(measure)
+      } else if (this.settings.get('chordDuration') === 1) { // 2 beats
+        const measure = [];
+        for (let i = 0; i < this.settings.get('timeSignature'); i += 2) {
+          measure.push(getRandomChord(this.settings.get('complexity'), this.settings.get('accidentals')));
+        }
+        this.state.measures.push(measure)
+      } else if (this.settings.get('chordDuration') === 2) { // 1 measure
+        this.state.measures.push([getRandomChord(this.settings.get('complexity'), this.settings.get('accidentals'))]);
+      } else if (this.settings.get('chordDuration') === 3) { // 2 measures
+        this.state.measures.push([getRandomChord(this.settings.get('complexity'), this.settings.get('accidentals'))]);
+        this.state.measures.push(['%']);
+      }
+    }
   }
 
   /**
