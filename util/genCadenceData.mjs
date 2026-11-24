@@ -39,7 +39,7 @@ let runs = flat.flatMap(getRuns);
 console.log('runs.length', runs.length);
 
 // Filter out runs where 2 neighboring chords are the same
-runs = runs.filter(r => r[0] !== r[1] || r[1] !== r[2]);
+runs = runs.filter(r => r[0] !== r[1] && r[1] !== r[2]);
 console.log('runs.length withOUT duplicate neighboring chords', runs.length);
 
 /**

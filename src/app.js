@@ -217,11 +217,16 @@ export class ChordChartPracticeApp {
   nextPhrase() {
     this.state.beat = 1;
     this.state.history = [this.state.history[1], this.state.chords[0]];
-    this.state.chords.splice(0, 1); // pop-front the previous chord
-    let prev2 = [...this.state.history, ...this.state.chords].slice(-2);
+    const deletedChords = this.state.chords.splice(0, this.getChordsPerPhrase()); // pop-front the previous phrase
+    let prev2 = [...this.state.history, ...deletedChords, ...this.state.chords].slice(-2);
     while(this.state.chords.length < this.getChordsPerPhrase() * (this.settings.get('lookahead') + 1)) {
-      // @todo: re-implement complexity
-      const nextChord = predictNextChord(prev2[0], prev2[1], 3 /* this.settings.get('complexity') */, this.settings.get('accidentals'));
+      const nextChord = predictNextChord({
+        chord1String: prev2[0],
+        chord2String: prev2[1],
+        complexity: this.settings.get('complexity'),
+        bassNotes: this.settings.get('bassNotes'),
+        accidentals: this.settings.get('accidentals')
+      });
       this.state.chords.push(nextChord);
       prev2 = [prev2[1], nextChord];
     }

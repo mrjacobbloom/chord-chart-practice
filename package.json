@@ -12,7 +12,8 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"no tests\""
+    "test": "echo \"no tests\"",
+    "genCadenceData": "node util/genCadenceData.mjs"
   },
   "type": "module",
   "author": "Jacob Bloom",

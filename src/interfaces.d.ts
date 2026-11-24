@@ -4,10 +4,17 @@ namespace Setting {
     timeSignature: 'number';
     chordDuration: 'enum';
     lookahead: 'number';
-    // complexity: 'enum';
+    complexity: 'enum';
+    bassNotes: 'boolean';
     metronome: 'enum';
     metronomeDelay: 'number';
     accidentals: 'enum';
+  };
+
+  type TypesToValuesMap = {
+    boolean: boolean;
+    number: number;
+    enum: number;
   };
 
   type Name = keyof SettingsToTypesMap;
@@ -15,8 +22,6 @@ namespace Setting {
   type TypeOf<N extends Name> = SettingsToTypesMap[N];
 
   type ValueTypeOf<N extends Name> = TypesToValuesMap[TypeOf<N>];
-
-  type
 
   type Setting =
   | {

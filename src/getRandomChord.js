@@ -24,16 +24,24 @@ const appendGuesses = (guesses, predicate) => {
 
 /**
  * Given the previous 2 chords, predict the next one. Uses cadence data derived from the iReal 1300 standard songbook.
- * @param {string} c1Str
- * @param {string} c2Str
- * @param {number} complexity Number from 0-3 defining chord complexity
- * @param {number} accidentals Number from 0-3 defining accidental complexity
+ * @param {object} options
+ * @param {string} options.chord1String
+ * @param {string} options.chord2String
+ * @param {number} options.complexity From settings: number from 0-3 defining chord complexity
+ * @param {boolean} options.bassNotes From settings: whether to show bass notes
+ * @param {number} options.accidentals From settings: number from 0-3 defining accidental complexity
  * @returns {string}
  */
-export const predictNextChord = (c1Str, c2Str, complexity, accidentals) => {
+export const predictNextChord = ({
+  chord1String,
+  chord2String,
+  complexity,
+  bassNotes,
+  accidentals
+}) => {
   // @todo: re-implement complexity
-  const chord1 = tonal.Chord.get(c1Str);
-  const chord2 = tonal.Chord.get(c2Str);
+  const chord1 = tonal.Chord.get(chord1String);
+  const chord2 = tonal.Chord.get(chord2String);
   if (chord1.empty || chord2.empty) return getRandomChord(complexity, accidentals);
 
   const interval = tonal.Interval.distance(chord1.tonic || '', chord2.tonic || '');
@@ -78,29 +86,64 @@ export const predictNextChord = (c1Str, c2Str, complexity, accidentals) => {
   // @todo: weight these? concept of temperature?
   shuffle(cadenceGuesses);
   for (const cadence of cadenceGuesses) {
-    let chord3Tonic = tonal.Note.transpose(chord2.tonic || '', cadence.interval2.name);
+    const tonic = tonal.Note.transpose(chord2.tonic || '', cadence.interval2.name);
+    const chord = renderChordWithComplexity({
+      tonic,
+      symbol: cadence.chord3.symbol,
+      bassNote: cadence.chord3.bassInterval ? tonal.Note.transpose(tonic, cadence.chord3.bassInterval.name) : null,
+      complexity,
+      bassNotes,
+      accidentals
+    });
 
-    if (
-      chord3Tonic.match(/bbb|###/) // The cadences are biased toward diminished intervals. Without this, they build up and you get Abbbbbbbbbbm7 etc.
-      || (accidentals <= 2 && chord3Tonic.match(/bb|##/)) // no double-accidentals
-      || (accidentals <= 1 && ENHARMONIC.includes(chord3Tonic)) // avoid Cb, etc
-      || accidentals === 0 // no accidentals
-    ) {
-      chord3Tonic = tonal.Note.simplify(chord3Tonic);
-    }
-
-    if (accidentals === 0 && chord3Tonic.match(/b|#/)) {
-      continue;
-    }
-
-
-    
-    return `${chord3Tonic}${cadence.chord3.symbol}`;
+    if (chord) return chord;
   }
 
   return getRandomChord(complexity, accidentals);
-  
 };
+
+/**
+ * Render the given chord, respecting the complexity/etc settings, or return null if it's not possible.
+ * @param {object} options
+ * @param {string} options.tonic
+ * @param {string} options.symbol
+ * @param {string | null} options.bassNote
+ * @param {number} options.complexity From settings: number from 0-3 defining chord complexity
+ * @param {boolean} options.bassNotes From settings: whether to show bass notes
+ * @param {number} options.accidentals From settings: number from 0-3 defining accidental complexity
+ * @returns {string | null}
+ */
+function renderChordWithComplexity({
+  tonic,
+  symbol,
+  bassNote,
+  complexity,
+  bassNotes,
+  accidentals,
+}) {
+  if (
+      tonic.match(/bbb|###/) // The cadences are biased toward diminished intervals. Without this, they build up and you get Abbbbbbbbbbm7 etc.
+      || (accidentals <= 2 && tonic.match(/bb|##/)) // no double-accidentals
+      || (accidentals <= 1 && ENHARMONIC.includes(tonic)) // avoid Cb, etc
+      || accidentals === 0 // no accidentals
+    ) {
+      tonic = tonal.Note.simplify(tonic);
+    }
+
+    if (accidentals === 0 && tonic.match(/b|#/)) {
+      return null;
+    }
+
+    if (complexity === 0) { // triads & suspensions
+      if (symbol.match(/7|9|11|13|#|b/)) return null;
+    } else if (complexity === 1) { // 7ths
+      if (symbol.match(/9|11|13|#|b/)) return null;
+    } else if (complexity === 2) { // chord extensions
+      if (symbol.match(/#|b/)) return null;
+    } // else altered chords, which need no simplification
+    
+    return `${tonic}${symbol}${bassNote && bassNotes ? `/${bassNote}` : ''}`;
+}
 
 /**
  * Pick a random item from an array.
