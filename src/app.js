@@ -1,5 +1,5 @@
 import { COLORS } from './colors.js';
-import { predictNextChord } from './getRandomChord.js';
+import { predictNextChord } from './predictNextChord.js';
 import { SettingsManager } from './settingsManager.js'
 import { Player } from './player.js';
 
@@ -247,6 +247,7 @@ export class ChordChartPracticeApp {
       const nextChord = predictNextChord({
         chord1String: prev2[0],
         chord2String: prev2[1],
+        prediction: this.settings.get('prediction'),
         complexity: this.settings.get('complexity'),
         bassNotes: this.settings.get('bassNotes'),
         accidentals: this.settings.get('accidentals')

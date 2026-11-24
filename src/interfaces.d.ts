@@ -4,6 +4,7 @@ namespace Setting {
     timeSignature: 'number';
     chordDuration: 'enum';
     lookahead: 'number';
+    prediction: 'enum';
     complexity: 'enum';
     bassNotes: 'boolean';
     metronome: 'enum';

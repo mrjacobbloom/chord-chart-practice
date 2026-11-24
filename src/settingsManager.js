@@ -17,6 +17,7 @@ export class SettingsManager {
     { name: 'timeSignature', displayName: 'Time Signature', type: 'number', value: 4, min: 1, max: 12, valueSuffix: '/4' },
     { name: 'chordDuration', displayName: 'Chord Duration', type: 'enum', value: 2, enum: ['1 Beat', '2 Beats', '1 Measure', '2 Measures'] },
     { name: 'lookahead', displayName: 'Phrase Look-ahead', type: 'number', value: 2, min: 0 },
+    { name: 'prediction', displayName: 'Chord Changes', type: 'enum', value: 1, enum: ['Random', 'Smart'] },
     { name: 'complexity', displayName: 'Chord Complexity', type: 'enum', value: 3, enum: ['Triads & Suspensions', '7ths', 'Chord Extensions', 'Altered Chords'] },
     { name: 'accidentals', displayName: 'Accidentals', type: 'enum', value: 2, enum: ['None', 'Avoid Enharmonics (ex. no Cb)', 'Single-Accidentals', 'Double-Accidentals'] },
     { name: 'bassNotes', displayName: 'Bass Notes', type: 'boolean', value: true },

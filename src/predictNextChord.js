@@ -27,6 +27,7 @@ const appendGuesses = (guesses, predicate) => {
  * @param {object} options
  * @param {string} options.chord1String
  * @param {string} options.chord2String
+ * @param {number} options.prediction From settings: number from 0-1 defining chord prediction mode (random or statistical)
  * @param {number} options.complexity From settings: number from 0-3 defining chord complexity
  * @param {boolean} options.bassNotes From settings: whether to show bass notes
  * @param {number} options.accidentals From settings: number from 0-3 defining accidental complexity
@@ -35,14 +36,18 @@ const appendGuesses = (guesses, predicate) => {
 export const predictNextChord = ({
   chord1String,
   chord2String,
+  prediction,
   complexity,
   bassNotes,
   accidentals
 }) => {
-  // @todo: re-implement complexity
+  if (prediction === 0) { // Random prediction mode
+    return getRandomChord(complexity, accidentals, bassNotes);
+  }
+
   const chord1 = tonal.Chord.get(chord1String);
   const chord2 = tonal.Chord.get(chord2String);
-  if (chord1.empty || chord2.empty) return getRandomChord(complexity, accidentals);
+  if (chord1.empty || chord2.empty) return getRandomChord(complexity, accidentals, bassNotes);
 
   const interval = tonal.Interval.distance(chord1.tonic || '', chord2.tonic || '');
   const chord1BassInterval = chord1.bass ? tonal.Interval.distance(chord1.tonic || '', chord1.bass) : undefined;
@@ -99,7 +104,7 @@ export const predictNextChord = ({
     if (chord) return chord;
   }
 
-  return getRandomChord(complexity, accidentals);
+  return getRandomChord(complexity, accidentals, bassNotes);
 };
 
 /**
@@ -185,11 +190,12 @@ function shuffle(array) {
 
 /**
  * Generate a random chord string.
- * @param {number} complexity Number from 0-3 defining chord complexity
- * @param {number} accidentals Number from 0-3 defining accidental complexity
+ * @param {number} complexity From settings: number from 0-3 defining chord complexity
+ * @param {boolean} bassNotes From settings: whether to show bass notes
+ * @param {number} accidentals From settings: number from 0-3 defining accidental complexity
  * @returns {string} A random chord as a string.
  */
-const getRandomChord = (complexity, accidentals) => {
+const getRandomChord = (complexity, accidentals, bassNotes) => {
   /** @type {string} */ let tonic;
 
   let availableAccidentals = [''];
@@ -203,6 +209,14 @@ const getRandomChord = (complexity, accidentals) => {
   do {
     tonic = `${pickRandom(KEYS)}${pickRandom(availableAccidentals)}`
   } while(simplifyEnharmonics && ENHARMONIC.includes(tonic)) // yay for nondeterminism!
-  const quality = pickRandom(pickRandom(getQualitiesAtComplexity(complexity)));
-  return `${tonic}${quality}`;
+  const symbol = pickRandom(pickRandom(getQualitiesAtComplexity(complexity)));
+
+  let bassNote = '';
+  if (bassNotes && Math.random() < 0.2) {
+    const [_, ...chordNotes] = tonal.Chord.notes(symbol, tonic);
+    if (chordNotes.length) {
+      bassNote = `/${pickRandom(chordNotes)}`
+    }
+  }
+  return `${tonic}${symbol}${bassNote}`;
 };
