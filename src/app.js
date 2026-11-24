@@ -30,8 +30,16 @@ export class ChordChartPracticeApp {
      */
     history: ['D-7', 'G7'],
 
+    /**
+     * @type {'playing' | 'paused'}
+     */
+    playState: 'playing',
+
     settingsOpen: false,
   };
+
+  /** @type {NodeJS.Timeout | null} */ nextBeatTimeout1 = null;
+  /** @type {NodeJS.Timeout | null} */ nextBeatTimeout2 = null;
 
   /**
    * Manages the user-configurable settings for the app
@@ -62,10 +70,17 @@ export class ChordChartPracticeApp {
 
     this.drawInterface();
 
+    if (this.state.playState === 'playing') this.scheduleNextBeat();
+  }
+
+  /**
+   * @private
+   */
+  scheduleNextBeat() {
     // use setTimeout over setInterval so changing the tempo "just works"
     const nextBeat = this.state.beat + 1; // freeze the beat to sidestep timing issues
-    setTimeout(() => this.doMetronome(nextBeat), this.getMSPerBeat() + this.settings.get('metronomeDelay'))
-    setTimeout(this.mainLoop.bind(this), this.getMSPerBeat());
+    this.nextBeatTimeout1 = setTimeout(() => this.doMetronome(nextBeat), this.getMSPerBeat() + this.settings.get('metronomeDelay'))
+    this.nextBeatTimeout2 = setTimeout(this.mainLoop.bind(this), this.getMSPerBeat());
   }
 
   /**
@@ -93,6 +108,15 @@ export class ChordChartPracticeApp {
     } else if (keyString === 's') {
       this.state.settingsOpen = !this.state.settingsOpen;
       this.settings.selectedRow = 0;
+    } else if (keyString === ' ') {
+      if (this.state.playState === 'paused') {
+        this.state.playState = 'playing';
+        this.scheduleNextBeat();
+      } else {
+        this.state.playState = 'paused';
+        this.nextBeatTimeout1?.close();
+        this.nextBeatTimeout2?.close();
+      }
     } else {
       process.exit();
     }
@@ -259,6 +283,7 @@ export class ChordChartPracticeApp {
     if (this.state.settingsOpen) {
       this.settings.drawInterface();
     } else {
+      console.log(COLORS.dim('Play/Pause: [space]'));
       console.log(COLORS.dim('Open Settings: [s]'));
       console.log(COLORS.dim('Press any other key to exit.'));
       console.log('');
