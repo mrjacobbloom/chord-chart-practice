@@ -12,7 +12,7 @@ npm start
 
 ## Credits
 
-THe music theory, as with all my music-related projects, is handled by the incredible [tonaljs](https://tonaljs.github.io/tonal/).
+The music theory, as with all my music-related projects, is handled by the incredible [tonaljs](https://tonaljs.github.io/tonal/).
 
 Click sound effect is adapted from this Metronome sound effect by Mike Koenig, which is under an Attribution 3.0 license: https://soundbible.com/914-Metronome.html
 
